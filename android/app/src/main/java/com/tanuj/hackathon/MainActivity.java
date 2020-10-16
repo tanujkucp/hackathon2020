@@ -1,5 +1,4 @@
-package com.hackathon;
-
+package com.tanuj.hackathon;
 import com.facebook.react.ReactActivity;
 
 public class MainActivity extends ReactActivity {

@@ -129,7 +129,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.hackathon"
+        applicationId "com.tanuj.hackathon"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

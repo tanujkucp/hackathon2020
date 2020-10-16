@@ -1,4 +1,4 @@
-package com.hackathon;
+package com.tanuj.hackathon;
 
 import android.app.Application;
 import android.content.Context;

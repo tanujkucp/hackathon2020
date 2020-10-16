@@ -7,23 +7,56 @@ import {
     Text,
     StatusBar,
     ImageBackground,
-    Button,
     Alert,
 } from 'react-native';
 import {Colors} from 'react-native/Libraries/NewAppScreen';
-import {GoogleSignin, GoogleSigninButton} from 'react-native-google-signin';
+import {GoogleSignin, GoogleSigninButton, statusCodes} from 'react-native-google-signin';
+import {GOOGLE_ACCESS_API_URL} from '../config/config';
 
-const loginToGoogle = () => {
-    Alert.alert('connect');
+const loginToGoogle = async (setUserInfo) => {
+    await GoogleSignin.configure({
+        scopes: [GOOGLE_ACCESS_API_URL],
+        shouldFetchBasicProfile: true,
+        offlineAccess: true,
+        webClientId : '935912911953-mbq59cimiaa3iquf2bh4lgpd5egc9sie.apps.googleusercontent.com',
+    });
+
+    try {
+        await GoogleSignin.hasPlayServices();
+        const userInfo = await GoogleSignin.signIn();
+        //this.setState({ userInfo });
+        setUserInfo({userInfo});
+        console.log(userInfo);
+
+        //todo navigate to Home screen
+
+    } catch (error) {
+        console.log(error);
+        if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+            // user cancelled the login flow
+            Alert.alert('Sign In cancelled!');
+        } else if (error.code === statusCodes.IN_PROGRESS) {
+            // operation (f.e. sign in) is in progress already
+            Alert.alert('Sign In in progress!');
+        } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+            // play services not available or outdated
+            Alert.alert('Please update your Play Services from PlayStore!');
+        } else {
+            // some other error happened
+            Alert.alert('An error occurred!');
+        }
+    }
+
 };
 
-const connectToDrive = () => {
-    //login to google to access access token for using google drive
-    //Alert.alert('connect');
-};
+// const connectToDrive = () => {
+//     //login to google to access access token for using google drive
+//     //Alert.alert('connect');
+// };
 
-const App: () => React$Node = () => {
+const Login = ({navigation}) => {
     const [isSigninInProgress, setSigninInProgress] = useState(false);
+    const [userInfo, setUserInfo] = useState({});
 
     return (
         <>
@@ -34,7 +67,7 @@ const App: () => React$Node = () => {
                     style={styles.scrollView}>
                     <ImageBackground
                         accessibilityRole={'image'}
-                        source={require('./assets/logo.png')}
+                        source={require('../assets/logo.png')}
                         style={styles.background}
                         imageStyle={styles.logo}>
                         <Text style={styles.text}>Welcome to Sync!</Text>
@@ -54,8 +87,8 @@ const App: () => React$Node = () => {
                             <GoogleSigninButton
                                 style={{width: 312, height: 48}}
                                 size={GoogleSigninButton.Size.Wide}
-                                color={GoogleSigninButton.Color.Dark}
-                                onPress={loginToGoogle}
+                                color={GoogleSigninButton.Color.Light}
+                                onPress={() => loginToGoogle(setUserInfo)}
                                 disabled={isSigninInProgress}/>
                         </View>
 
@@ -125,4 +158,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default App;
+export default Login;
