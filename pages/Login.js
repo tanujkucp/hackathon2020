@@ -11,25 +11,21 @@ import {
 } from 'react-native';
 import {Colors} from 'react-native/Libraries/NewAppScreen';
 import {GoogleSignin, GoogleSigninButton, statusCodes} from 'react-native-google-signin';
-import {GOOGLE_ACCESS_API_URL} from '../config/config';
+import {GOOGLE_ACCESS_API_URL, GOOGLE_WEB_CLIENT_ID} from '../config/config';
 
-const loginToGoogle = async (setUserInfo) => {
+const loginToGoogle = async (updateUser) => {
     await GoogleSignin.configure({
         scopes: [GOOGLE_ACCESS_API_URL],
         shouldFetchBasicProfile: true,
         offlineAccess: true,
-        webClientId : '935912911953-mbq59cimiaa3iquf2bh4lgpd5egc9sie.apps.googleusercontent.com',
+        webClientId: GOOGLE_WEB_CLIENT_ID,
     });
 
     try {
         await GoogleSignin.hasPlayServices();
         const userInfo = await GoogleSignin.signIn();
-        //this.setState({ userInfo });
-        setUserInfo({userInfo});
+        updateUser({userInfo});
         console.log(userInfo);
-
-        //todo navigate to Home screen
-
     } catch (error) {
         console.log(error);
         if (error.code === statusCodes.SIGN_IN_CANCELLED) {
@@ -49,15 +45,7 @@ const loginToGoogle = async (setUserInfo) => {
 
 };
 
-// const connectToDrive = () => {
-//     //login to google to access access token for using google drive
-//     //Alert.alert('connect');
-// };
-
-const Login = ({navigation}) => {
-    const [isSigninInProgress, setSigninInProgress] = useState(false);
-    const [userInfo, setUserInfo] = useState({});
-
+const Login = ({navigation, updateUser}) => {
     return (
         <>
             <StatusBar barStyle="dark-content"/>
@@ -88,12 +76,10 @@ const Login = ({navigation}) => {
                                 style={{width: 312, height: 48}}
                                 size={GoogleSigninButton.Size.Wide}
                                 color={GoogleSigninButton.Color.Light}
-                                onPress={() => loginToGoogle(setUserInfo)}
-                                disabled={isSigninInProgress}/>
+                                onPress={() => loginToGoogle(updateUser)}
+                            />
                         </View>
-
                     </View>
-
                 </ScrollView>
             </SafeAreaView>
         </>

@@ -170,11 +170,20 @@ const Home = ({navigation}) => {
         //     Alert.alert(err.toString());
         // });
         //todo read all files inside this 'path' directory
-        console.log(RNFS.ExternalStorageDirectoryPath);
-        RNFS.readDir(path).then(result => {
-            console.log('GOT RESULT', result);
-        }).catch((err) => {
+        //console.log(RNFS.ExternalStorageDirectoryPath);
+        // RNFS.readDir(path).then(result => {
+        //     console.log('GOT RESULT', result);
+        // }).catch((err) => {
+        //     console.log(err);
+        //     Alert.alert(err.toString());
+        // });
+        RNFS.readFile(path, 'utf8')
+            .then(contents => {
+                console.log(contents);
+                Alert.alert('SOMETHING IS READ');
+            }).catch((err) => {
             console.log(err);
+            Alert.alert(err.toString());
         });
 
     };
@@ -211,7 +220,7 @@ const Home = ({navigation}) => {
                         <View style={{marginTop: 10, marginBottom: 70}}>
                             <Text style={{textAlign: 'center', fontSize: 24, marginBottom: 10}}>FOLDERS</Text>
                             {folders.map(folder => (
-                                <Card key={folder.path} elevation={10} onPress={() => printDirectory(folder.path)}
+                                <Card key={folder.path} elevation={10} onPress={() => printDirectory(folder.file_path)}
                                       style={{marginHorizontal: 10, marginVertical: 5}}>
                                     <Card.Title title={folder.name} subtitle={folder.path}
                                                 left={() => <Avatar.Icon size={36} icon="folder"/>}/>
