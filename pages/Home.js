@@ -5,7 +5,9 @@ import {GoogleSignin} from 'react-native-google-signin';
 import {Avatar, Button, Card, Title, Paragraph, FAB} from 'react-native-paper';
 import DocumentPicker from 'react-native-document-picker';
 import RNFetchBlob from 'rn-fetch-blob';
+import {saveFolders, getFolders, deleteFolders} from '../utilities/Storage';
 
+const RNFS = require('react-native-fs');
 /**
  * require write storage permission
  */
@@ -48,26 +50,6 @@ const requestReadStoragePermission = async () => {
         console.warn(err);
     }
 };
-//using scoped storage access on android 11
-//////////// YOU CANT SHOW A PROMT TO GET THIS PERMISSION, IT CAN ONLY BE GIVEN FROM SETTINGS SO LEAVE IT
-// const requestManageStoragePermission = async () => {
-//     try {
-//         const granted = await PermissionsAndroid.request(
-//             'android.permission.MANAGE_EXTERNAL_STORAGE',
-//             {
-//                 'title': 'Allow access to All Files',
-//                 'message': 'All files access needed to manage your storage.',
-//             },
-//         );
-//         if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-//             console.log('You can manage storage on A11');
-//         } else {
-//             console.log('Manage Storage permission denied');
-//         }
-//     } catch (err) {
-//         console.warn(err);
-//     }
-// };
 
 const pickDirectory = async (addFolder) => {
     try {
@@ -81,7 +63,7 @@ const pickDirectory = async (addFolder) => {
             path = path.substring(0, path.lastIndexOf('/'));
             let name = path.substring(path.lastIndexOf('/') + 1);
             //console.log('Folder name: ' + name);
-            addFolder({path: path, name: name});
+            addFolder({path: path, name: name, file_path: stats.path});
         }).catch(err => {
             console.log('Error in RNfetchblob:' + err);
         });
@@ -104,27 +86,30 @@ const Home = ({navigation}) => {
     };
     const searchFolder = (path) => {
         for (let fold of folders) {
-            console.log(path, ' and ', fold.path);
+            //console.log(path, ' and ', fold.path);
             if (path === fold.path) {
                 return true;
             }
         }
         return false;
     };
-    const addFolder = ({path, name}) => {
+    const addFolder = ({path, name, file_path}) => {
         //check if same folder already exists or not.
         if (searchFolder(path)) {
             //means this folder already exists - so dont select it again
             Alert.alert('This folder is already selected!');
         } else {
-            setFolders(folds => folds.concat({
+            let newFolder = {
                 path: path,
                 name: name,
                 sync_enabled: false,
-                last_sync_time: null,
-            }));
+                last_sync_time: 0,
+                file_path: file_path,
+            };
+            setFolders(folds => folds.concat(newFolder));
+            // also save these folders to storage
+            saveFolders(folders.concat(newFolder)).then();
         }
-        //todo also save these folders to storage
     };
 
     useEffect(() => {
@@ -132,30 +117,67 @@ const Home = ({navigation}) => {
             setUser(userInfo);
             console.log('Home: ', userInfo);
         });
+        getFolders().then(f => {
+            if (f !== null && f !== undefined) {
+                setFolders(f);
+            }
+        });
         // check storage permission
         const checkPermission = () => {
-            PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE).then((writeGranted) => {
-                console.log('writeGranted', writeGranted);
-                if (!writeGranted) {
-                    requestWriteStoragePermission().then();
+            PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE).then((readGranted) => {
+                console.log('readGranted', readGranted);
+                if (!readGranted) {
+                    requestReadStoragePermission().then();
                 }
-                PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE).then((readGranted) => {
-                    console.log('readGranted', readGranted);
-                    if (!readGranted) {
-                        requestReadStoragePermission().then();
-                    }
-                });
             });
-            // YOU CAN'T CHECK USING THIS FORMAT, ITS A DIFFERENT WAY
-            // PermissionsAndroid.check('android.permission.MANAGE_EXTERNAL_STORAGE').then((readGranted) => {
-            //     console.log('manageGranted', readGranted);
-            //     if (!readGranted) {
-            //         requestManageStoragePermission().then();
+            // PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE).then((writeGranted) => {
+            //     console.log('writeGranted', writeGranted);
+            //     if (!writeGranted) {
+            //         requestWriteStoragePermission().then();
             //     }
+            //     PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE).then((readGranted) => {
+            //         console.log('readGranted', readGranted);
+            //         if (!readGranted) {
+            //             requestReadStoragePermission().then();
+            //         }
+            //     });
             // });
         };
         checkPermission();
     }, []);
+    const printDirectory = (path) => {
+        console.log('PRINTING: ' + path);
+        //const dirs = RNFetchBlob.fs.dirs;
+        //console.log(dirs.DocumentDir);
+        //console.log(dirs.CacheDir);
+        //console.log(dirs.DCIMDir);
+        // let p = dirs.SDCardDir;
+        //
+        // console.log(p);
+        // RNFetchBlob.fs.ls(p + '/ADM').then((stats) => {
+        //     console.log(stats);
+        // }).catch((err) => {
+        //     console.log(err);
+        // });
+        ///storage/emulated/0/Pictures/Instagram/IMG_20201016_113823_041.jpg
+        // RNFetchBlob.fs.readFile(path, 'base64')
+        //     .then((data) => {
+        //         // handle the data ..
+        //         console.log('READ FILE: ', data);
+        //         Alert.alert('SOMETHING IS READ');
+        //     }).catch(err => {
+        //     console.log('READFILE: ', err);
+        //     Alert.alert(err.toString());
+        // });
+        //todo read all files inside this 'path' directory
+        console.log(RNFS.ExternalStorageDirectoryPath);
+        RNFS.readDir(path).then(result => {
+            console.log('GOT RESULT', result);
+        }).catch((err) => {
+            console.log(err);
+        });
+
+    };
     return (
         <>
             <StatusBar barStyle="dark-content"/>
@@ -170,7 +192,7 @@ const Home = ({navigation}) => {
                             </Card.Content>
                         </Card>
                     )}
-                    {folders.length === 0 ? (
+                    {folders === null || folders.length === 0 ? (
                         <SafeAreaView>
                             <View style={styles.body}>
                                 <View style={styles.sectionContainer}>
@@ -189,7 +211,7 @@ const Home = ({navigation}) => {
                         <View style={{marginTop: 10, marginBottom: 70}}>
                             <Text style={{textAlign: 'center', fontSize: 24, marginBottom: 10}}>FOLDERS</Text>
                             {folders.map(folder => (
-                                <Card key={folder.path} elevation={10}
+                                <Card key={folder.path} elevation={10} onPress={() => printDirectory(folder.path)}
                                       style={{marginHorizontal: 10, marginVertical: 5}}>
                                     <Card.Title title={folder.name} subtitle={folder.path}
                                                 left={() => <Avatar.Icon size={36} icon="folder"/>}/>
