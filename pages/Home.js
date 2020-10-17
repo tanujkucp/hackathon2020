@@ -46,6 +46,25 @@ const requestReadStoragePermission = async () => {
         console.warn(err);
     }
 };
+//using scoped storage access on android 11
+const requestManageStoragePermission = async () => {
+    try {
+        const granted = await PermissionsAndroid.request(
+            'android.permission.MANAGE_EXTERNAL_STORAGE',
+            {
+                'title': 'Allow access to All Files',
+                'message': 'All files access needed to manage your storage.',
+            },
+        );
+        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+            console.log('You can manage storage on A11');
+        } else {
+            console.log('Manage Storage permission denied');
+        }
+    } catch (err) {
+        console.warn(err);
+    }
+};
 
 const Home = ({navigation}) => {
     const [user, setUser] = useState(null);
@@ -72,6 +91,12 @@ const Home = ({navigation}) => {
                         requestReadStoragePermission().then();
                     }
                 });
+            });
+            PermissionsAndroid.check('android.permission.MANAGE_EXTERNAL_STORAGE').then((readGranted) => {
+                console.log('manageGranted', readGranted);
+                if (!readGranted) {
+                    requestManageStoragePermission().then();
+                }
             });
         };
         checkPermission();
@@ -103,7 +128,11 @@ const Home = ({navigation}) => {
                             </View>
                         </View>
                     </SafeAreaView>
-                ) : null
+                ) : (
+                    <View>
+
+                    </View>
+                )
                 }
                 <FAB
                     style={styles.fab}
